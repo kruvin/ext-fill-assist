@@ -208,8 +208,24 @@ class InterviewFillAssistant {
     const now = new Date();
     
     if (this.config.timestampFormat === 'relative' && this.config.interviewStartTime) {
-      const startTime = new Date(this.config.interviewStartTime);
+      // Parse the time string (HH:MM format)
+      const [hours, minutes] = this.config.interviewStartTime.split(':').map(Number);
+      const startTime = new Date();
+      startTime.setHours(hours, minutes, 0, 0);
+      
+      // If the start time is in the future (next day), subtract 24 hours
+      if (startTime > now) {
+        startTime.setDate(startTime.getDate() - 1);
+      }
+      
       const elapsed = now - startTime;
+      console.log('Relative timestamp calculation:', {
+        interviewStartTime: this.config.interviewStartTime,
+        hours, minutes,
+        startTime: startTime.toISOString(),
+        now: now.toISOString(),
+        elapsed: elapsed
+      });
       return this.formatRelativeTime(elapsed);
     } else {
       return this.formatAbsoluteTime(now);
@@ -234,6 +250,14 @@ class InterviewFillAssistant {
     const totalSeconds = Math.floor(elapsedMs / 1000);
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
+    
+    console.log('formatRelativeTime:', {
+      elapsedMs,
+      totalSeconds,
+      minutes,
+      seconds,
+      relativeFormat: this.config.relativeFormat
+    });
     
     if (this.config.relativeFormat === 'mm:ss') {
       return `[+${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}] `;
@@ -427,7 +451,16 @@ class InterviewFillAssistant {
 
     // Timer always shows relative time from interview start in mm:ss format
     if (this.config.interviewStartTime) {
-      const startTime = new Date(this.config.interviewStartTime);
+      // Parse the time string (HH:MM format)
+      const [hours, minutes] = this.config.interviewStartTime.split(':').map(Number);
+      const startTime = new Date();
+      startTime.setHours(hours, minutes, 0, 0);
+      
+      // If the start time is in the future (next day), subtract 24 hours
+      if (startTime > now) {
+        startTime.setDate(startTime.getDate() - 1);
+      }
+      
       const elapsed = now - startTime;
       displayText = this.formatTimerRelativeTime(elapsed);
     } else {

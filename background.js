@@ -21,7 +21,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     chrome.storage.sync.get(['isActive', 'timestampFormat', 'timeFormat', 'interviewStartTime', 'relativeFormat', 'timerEnabled', 'timerPosition', 'themeMode'], (result) => {
       // Check if this tab is the active interview tab
       result.isActiveInThisTab = result.isActive && activeTabId === sender.tab.id;
-      sendResponse(result);
+      
+      // Ensure all values have defaults
+      const response = {
+        isActive: result.isActive || false,
+        timestampFormat: result.timestampFormat || 'absolute',
+        timeFormat: result.timeFormat || 'HH:mm:ss',
+        interviewStartTime: result.interviewStartTime || null,
+        relativeFormat: result.relativeFormat || 'mm:ss',
+        timerEnabled: result.timerEnabled !== false,
+        timerPosition: result.timerPosition || 'top-right',
+        themeMode: result.themeMode || 'auto',
+        isActiveInThisTab: result.isActive && activeTabId === sender.tab.id
+      };
+      
+      sendResponse(response);
     });
     return true; // Keep message channel open for async response
   }

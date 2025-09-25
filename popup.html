@@ -27,10 +27,14 @@
         
         <div class="config-group">
           <label for="timestampFormat">Timestamp Type:</label>
-          <select id="timestampFormat">
-            <option value="absolute">Absolute Time</option>
-            <option value="relative">Relative to Start</option>
-          </select>
+          <div class="toggle-container">
+            <span class="toggle-label">Absolute</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="timestampFormat">
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="toggle-label">Relative</span>
+          </div>
         </div>
 
         <div class="config-group" id="absoluteTimeConfig">
@@ -52,7 +56,7 @@
 
         <div class="config-group">
           <label for="interviewStartTime">Interview Start Time:</label>
-          <input type="datetime-local" id="interviewStartTime">
+          <input type="time" id="interviewStartTime">
           <button id="setNowButton" class="small-button">Set to Now</button>
         </div>
       </section>
@@ -63,13 +67,17 @@
         
         <div class="config-group">
           <label for="timerEnabled">Show Timer:</label>
-          <select id="timerEnabled">
-            <option value="true">Enabled</option>
-            <option value="false">Disabled</option>
-          </select>
+          <div class="toggle-container">
+            <span class="toggle-label">Disabled</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="timerEnabled">
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="toggle-label">Enabled</span>
+          </div>
         </div>
 
-        <div class="config-group" id="timerPositionConfig">
+        <div class="config-group" id="timerPositionConfig" style="display: none;">
           <label for="timerPosition">Timer Position:</label>
           <select id="timerPosition">
             <option value="top-right">Top Right</option>

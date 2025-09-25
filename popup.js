@@ -18,6 +18,12 @@ class PopupManager {
     
     // Update UI
     this.updateUI();
+    
+    // Ensure correct time config visibility
+    this.toggleTimeConfigVisibility();
+    
+    // Ensure correct timer config visibility
+    this.toggleTimerConfigVisibility();
   }
 
   async loadState() {
@@ -27,6 +33,7 @@ class PopupManager {
       
       // Send message to current tab to get state
       const response = await chrome.tabs.sendMessage(tab.id, { action: 'getState' });
+      console.log('Received response from tab:', response);
       this.isActive = response.isActiveInThisTab || false;
       this.config = {
         timestampFormat: response.timestampFormat || 'absolute',
@@ -38,7 +45,35 @@ class PopupManager {
         themeMode: response.themeMode || 'auto'
       };
     } catch (error) {
-      console.error('Failed to load state:', error);
+      console.error('Failed to load state from tab, trying background script:', error);
+      
+      // Fallback: get state directly from background script
+      try {
+        const response = await chrome.runtime.sendMessage({ action: 'getState' });
+        this.isActive = response.isActive || false;
+        this.config = {
+          timestampFormat: response.timestampFormat || 'absolute',
+          timeFormat: response.timeFormat || 'HH:mm:ss',
+          interviewStartTime: response.interviewStartTime,
+          relativeFormat: response.relativeFormat || 'mm:ss',
+          timerEnabled: response.timerEnabled !== false,
+          timerPosition: response.timerPosition || 'top-right',
+          themeMode: response.themeMode || 'auto'
+        };
+      } catch (fallbackError) {
+        console.error('Failed to load state from background script:', fallbackError);
+        // Use default values
+        this.isActive = false;
+        this.config = {
+          timestampFormat: 'absolute',
+          timeFormat: 'HH:mm:ss',
+          interviewStartTime: null,
+          relativeFormat: 'mm:ss',
+          timerEnabled: true,
+          timerPosition: 'top-right',
+          themeMode: 'auto'
+        };
+      }
     }
   }
 
@@ -50,7 +85,8 @@ class PopupManager {
 
     // Configuration changes
     document.getElementById('timestampFormat').addEventListener('change', (e) => {
-      this.updateConfig({ timestampFormat: e.target.value });
+      const timestampFormat = e.target.checked ? 'relative' : 'absolute';
+      this.updateConfig({ timestampFormat: timestampFormat });
       this.toggleTimeConfigVisibility();
     });
 
@@ -68,7 +104,8 @@ class PopupManager {
 
     // Timer configuration
     document.getElementById('timerEnabled').addEventListener('change', (e) => {
-      this.updateConfig({ timerEnabled: e.target.value === 'true' });
+      this.updateConfig({ timerEnabled: e.target.checked });
+      this.toggleTimerConfigVisibility();
     });
 
     document.getElementById('timerPosition').addEventListener('change', (e) => {
@@ -94,9 +131,9 @@ class PopupManager {
       // Set interview start time if not already set
       if (!this.config.interviewStartTime) {
         const now = new Date();
-        this.config.interviewStartTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-          .toISOString()
-          .slice(0, 16);
+        const hours = now.getHours().toString().padStart(2, '0');
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+        this.config.interviewStartTime = `${hours}:${minutes}`;
       }
     }
 
@@ -143,16 +180,16 @@ class PopupManager {
 
   setInterviewStartToNow() {
     const now = new Date();
-    const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-      .toISOString()
-      .slice(0, 16);
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const timeString = `${hours}:${minutes}`;
     
-    document.getElementById('interviewStartTime').value = localDateTime;
-    this.updateConfig({ interviewStartTime: localDateTime });
+    document.getElementById('interviewStartTime').value = timeString;
+    this.updateConfig({ interviewStartTime: timeString });
   }
 
   toggleTimeConfigVisibility() {
-    const timestampFormat = document.getElementById('timestampFormat').value;
+    const timestampFormat = document.getElementById('timestampFormat').checked ? 'relative' : 'absolute';
     const absoluteConfig = document.getElementById('absoluteTimeConfig');
     const relativeConfig = document.getElementById('relativeTimeConfig');
     
@@ -162,6 +199,17 @@ class PopupManager {
     } else {
       absoluteConfig.style.display = 'none';
       relativeConfig.style.display = 'block';
+    }
+  }
+
+  toggleTimerConfigVisibility() {
+    const timerEnabled = document.getElementById('timerEnabled').checked;
+    const timerPositionConfig = document.getElementById('timerPositionConfig');
+    
+    if (timerEnabled) {
+      timerPositionConfig.style.display = 'block';
+    } else {
+      timerPositionConfig.style.display = 'none';
     }
   }
 
@@ -184,10 +232,11 @@ class PopupManager {
     }
 
     // Update configuration values
-    document.getElementById('timestampFormat').value = this.config.timestampFormat;
+    console.log('Updating UI with config:', this.config);
+    document.getElementById('timestampFormat').checked = this.config.timestampFormat === 'relative';
     document.getElementById('timeFormat').value = this.config.timeFormat;
     document.getElementById('relativeFormat').value = this.config.relativeFormat;
-    document.getElementById('timerEnabled').value = this.config.timerEnabled.toString();
+    document.getElementById('timerEnabled').checked = this.config.timerEnabled;
     document.getElementById('timerPosition').value = this.config.timerPosition;
     document.getElementById('themeMode').value = this.config.themeMode;
     
