@@ -1,0 +1,335 @@
+// Content script for real-time text processing
+class InterviewFillAssistant {
+  constructor() {
+    this.isActive = false;
+    this.config = {
+      timestampFormat: 'absolute',
+      timeFormat: 'HH:mm:ss',
+      interviewStartTime: null,
+      relativeFormat: 'mm:ss',
+      timerEnabled: true,
+      timerPosition: 'top-right'
+    };
+    this.timerElement = null;
+    this.timerInterval = null;
+    this.initialize();
+  }
+
+  async initialize() {
+    // Get initial state from background script
+    const response = await chrome.runtime.sendMessage({ action: 'getState' });
+    this.isActive = response.isActive;
+    this.config = {
+      timestampFormat: response.timestampFormat || 'absolute',
+      timeFormat: response.timeFormat || 'HH:mm:ss',
+      interviewStartTime: response.interviewStartTime,
+      relativeFormat: response.relativeFormat || 'mm:ss',
+      timerEnabled: response.timerEnabled !== false,
+      timerPosition: response.timerPosition || 'top-right'
+    };
+
+    // Listen for state changes
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+      if (request.action === 'stateChanged') {
+        this.handleStateChange(request.changes);
+      }
+    });
+
+    // Set up text input listeners
+    this.setupTextListeners();
+  }
+
+  handleStateChange(changes) {
+    if (changes.isActive) {
+      this.isActive = changes.isActive.newValue;
+      this.updateTimerDisplay();
+    }
+    if (changes.timestampFormat) {
+      this.config.timestampFormat = changes.timestampFormat.newValue;
+    }
+    if (changes.timeFormat) {
+      this.config.timeFormat = changes.timeFormat.newValue;
+    }
+    if (changes.interviewStartTime) {
+      this.config.interviewStartTime = changes.interviewStartTime.newValue;
+    }
+    if (changes.relativeFormat) {
+      this.config.relativeFormat = changes.relativeFormat.newValue;
+    }
+    if (changes.timerEnabled) {
+      this.config.timerEnabled = changes.timerEnabled.newValue;
+      this.updateTimerDisplay();
+    }
+    if (changes.timerPosition) {
+      this.config.timerPosition = changes.timerPosition.newValue;
+      this.updateTimerDisplay();
+    }
+  }
+
+  setupTextListeners() {
+    // Listen for input events on text areas and contenteditable elements
+    document.addEventListener('input', (event) => {
+      if (!this.isActive) return;
+      
+      const target = event.target;
+      if (this.isTextInput(target)) {
+        this.handleTextInput(target, event);
+      }
+    });
+
+    // Listen for keydown events to detect line breaks
+    document.addEventListener('keydown', (event) => {
+      if (!this.isActive) return;
+      
+      if (event.key === 'Enter' && this.isTextInput(event.target)) {
+        this.handleLineBreak(event.target);
+      }
+    });
+
+    // Listen for focus changes to update timer position
+    document.addEventListener('focusin', (event) => {
+      if (this.isActive) {
+        this.handleFocusChange();
+      }
+    });
+
+    document.addEventListener('focusout', (event) => {
+      if (this.isActive) {
+        this.handleFocusChange();
+      }
+    });
+  }
+
+  isTextInput(element) {
+    return element.tagName === 'TEXTAREA' || 
+           element.tagName === 'INPUT' && element.type === 'text' ||
+           element.contentEditable === 'true' ||
+           element.isContentEditable;
+  }
+
+  handleLineBreak(element) {
+    // Set a flag to indicate we need to add timestamp on next non-whitespace input
+    element.dataset.needsTimestamp = 'true';
+  }
+
+  handleTextInput(element, event) {
+    if (element.dataset.needsTimestamp === 'true') {
+      const inputValue = event.data;
+      
+      // Check if the input is non-whitespace
+      if (inputValue && inputValue.trim() !== '') {
+        this.addTimestamp(element);
+        element.dataset.needsTimestamp = 'false';
+      }
+    }
+  }
+
+  addTimestamp(element) {
+    const timestamp = this.getFormattedTimestamp();
+    const currentValue = this.getElementValue(element);
+    const cursorPosition = this.getCursorPosition(element);
+    
+    // Insert timestamp at the beginning of the current line
+    const lines = currentValue.split('\n');
+    const currentLineIndex = currentValue.substring(0, cursorPosition).split('\n').length - 1;
+    
+    if (currentLineIndex < lines.length) {
+      lines[currentLineIndex] = timestamp + lines[currentLineIndex];
+      const newValue = lines.join('\n');
+      this.setElementValue(element, newValue);
+      
+      // Adjust cursor position
+      const newCursorPosition = cursorPosition + timestamp.length;
+      this.setCursorPosition(element, newCursorPosition);
+    }
+  }
+
+  getFormattedTimestamp() {
+    const now = new Date();
+    
+    if (this.config.timestampFormat === 'relative' && this.config.interviewStartTime) {
+      const startTime = new Date(this.config.interviewStartTime);
+      const elapsed = now - startTime;
+      return this.formatRelativeTime(elapsed);
+    } else {
+      return this.formatAbsoluteTime(now);
+    }
+  }
+
+  formatAbsoluteTime(date) {
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
+    
+    if (this.config.timeFormat === 'HH:mm:ss') {
+      return `[${hours}:${minutes}:${seconds}] `;
+    } else if (this.config.timeFormat === 'HH:mm') {
+      return `[${hours}:${minutes}] `;
+    } else {
+      return `[${date.toLocaleTimeString()}] `;
+    }
+  }
+
+  formatRelativeTime(elapsedMs) {
+    const totalSeconds = Math.floor(elapsedMs / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    
+    if (this.config.relativeFormat === 'mm:ss') {
+      return `[+${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}] `;
+    } else {
+      return `[+${totalSeconds}s] `;
+    }
+  }
+
+  // Format relative time specifically for timer display (always mm:ss)
+  formatTimerRelativeTime(elapsedMs) {
+    const totalSeconds = Math.floor(elapsedMs / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
+
+  getElementValue(element) {
+    if (element.tagName === 'TEXTAREA' || element.tagName === 'INPUT') {
+      return element.value;
+    } else {
+      return element.textContent || element.innerText;
+    }
+  }
+
+  setElementValue(element, value) {
+    if (element.tagName === 'TEXTAREA' || element.tagName === 'INPUT') {
+      element.value = value;
+    } else {
+      element.textContent = value;
+    }
+  }
+
+  getCursorPosition(element) {
+    if (element.tagName === 'TEXTAREA' || element.tagName === 'INPUT') {
+      return element.selectionStart;
+    } else {
+      const selection = window.getSelection();
+      if (selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        return range.startOffset;
+      }
+      return 0;
+    }
+  }
+
+  setCursorPosition(element, position) {
+    if (element.tagName === 'TEXTAREA' || element.tagName === 'INPUT') {
+      element.setSelectionRange(position, position);
+    } else {
+      const selection = window.getSelection();
+      if (selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        range.setStart(range.startContainer, position);
+        range.setEnd(range.startContainer, position);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+    }
+  }
+
+  updateTimerDisplay() {
+    // Remove existing timer
+    if (this.timerElement) {
+      this.timerElement.remove();
+      this.timerElement = null;
+    }
+    
+    // Clear existing interval
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+      this.timerInterval = null;
+    }
+
+    // Don't show timer if not active or disabled
+    if (!this.isActive || !this.config.timerEnabled) {
+      return;
+    }
+
+    // Create timer element
+    this.timerElement = document.createElement('div');
+    this.timerElement.id = 'interview-timer';
+    this.timerElement.style.cssText = this.getTimerStyles();
+    
+    // Add to page
+    document.body.appendChild(this.timerElement);
+    
+    // Start timer update
+    this.updateTimerText();
+    this.timerInterval = setInterval(() => {
+      this.updateTimerText();
+    }, 1000);
+  }
+
+  getTimerStyles() {
+    const baseStyles = `
+      position: fixed;
+      z-index: 10000;
+      background: rgba(52, 152, 219, 0.95);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      user-select: none;
+      pointer-events: none;
+      transition: all 0.3s ease;
+    `;
+
+    const positionStyles = {
+      'top-right': 'top: 20px; right: 20px;',
+      'top-left': 'top: 20px; left: 20px;',
+      'bottom-right': 'bottom: 20px; right: 20px;',
+      'bottom-left': 'bottom: 20px; left: 20px;',
+      'over-focused': 'top: 50%; left: 50%; transform: translate(-50%, -50%);'
+    };
+
+    return baseStyles + (positionStyles[this.config.timerPosition] || positionStyles['top-right']);
+  }
+
+  updateTimerText() {
+    if (!this.timerElement) return;
+
+    const now = new Date();
+    let displayText = '';
+
+    // Timer always shows relative time from interview start in mm:ss format
+    if (this.config.interviewStartTime) {
+      const startTime = new Date(this.config.interviewStartTime);
+      const elapsed = now - startTime;
+      displayText = this.formatTimerRelativeTime(elapsed);
+    } else {
+      // Fallback to current time if no start time set
+      displayText = this.formatAbsoluteTime(now);
+    }
+
+    this.timerElement.textContent = `${displayText}`;
+  }
+
+  // Handle timer positioning over focused element
+  handleFocusChange() {
+    if (this.config.timerPosition === 'over-focused' && this.timerElement) {
+      const focusedElement = document.activeElement;
+      if (this.isTextInput(focusedElement)) {
+        const rect = focusedElement.getBoundingClientRect();
+        this.timerElement.style.top = `${rect.top - 40}px`;
+        this.timerElement.style.left = `${rect.left}px`;
+        this.timerElement.style.transform = 'none';
+      }
+    }
+  }
+}
+
+// Initialize the assistant when the content script loads
+const assistant = new InterviewFillAssistant();

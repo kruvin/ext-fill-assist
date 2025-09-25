@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Interview Fill Assistant</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Interview Fill Assistant</h1>
+    </header>
+    
+    <main>
+      <!-- Status Section -->
+      <section class="status-section">
+        <div class="status-indicator">
+          <span id="statusText">Inactive</span>
+          <div id="statusDot" class="status-dot inactive"></div>
+        </div>
+        <button id="toggleButton" class="toggle-button">Start Interview</button>
+      </section>
+
+      <!-- Configuration Section -->
+      <section class="config-section">
+        <h3>Timestamp Configuration</h3>
+        
+        <div class="config-group">
+          <label for="timestampFormat">Timestamp Type:</label>
+          <select id="timestampFormat">
+            <option value="absolute">Absolute Time</option>
+            <option value="relative">Relative to Start</option>
+          </select>
+        </div>
+
+        <div class="config-group" id="absoluteTimeConfig">
+          <label for="timeFormat">Time Format:</label>
+          <select id="timeFormat">
+            <option value="HH:mm:ss">HH:mm:ss</option>
+            <option value="HH:mm">HH:mm</option>
+            <option value="locale">Locale Format</option>
+          </select>
+        </div>
+
+        <div class="config-group" id="relativeTimeConfig" style="display: none;">
+          <label for="relativeFormat">Relative Format:</label>
+          <select id="relativeFormat">
+            <option value="mm:ss">mm:ss</option>
+            <option value="seconds">Seconds Only</option>
+          </select>
+        </div>
+
+        <div class="config-group">
+          <label for="interviewStartTime">Interview Start Time:</label>
+          <input type="datetime-local" id="interviewStartTime">
+          <button id="setNowButton" class="small-button">Set to Now</button>
+        </div>
+      </section>
+
+      <!-- Timer Configuration Section -->
+      <section class="config-section timer-section">
+        <h3>Timer Display</h3>
+        
+        <div class="config-group">
+          <label for="timerEnabled">Show Timer:</label>
+          <select id="timerEnabled">
+            <option value="true">Enabled</option>
+            <option value="false">Disabled</option>
+          </select>
+        </div>
+
+        <div class="config-group" id="timerPositionConfig">
+          <label for="timerPosition">Timer Position:</label>
+          <select id="timerPosition">
+            <option value="top-right">Top Right</option>
+            <option value="top-left">Top Left</option>
+            <option value="bottom-right">Bottom Right</option>
+            <option value="bottom-left">Bottom Left</option>
+            <option value="over-focused">Over Focused Text Box</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- Instructions Section -->
+      <section class="instructions-section">
+        <h3>How to Use</h3>
+        <ul>
+          <li>Click "Start Interview" to begin timestamp assistance</li>
+          <li>After pressing Enter, the next non-whitespace character will be prefixed with a timestamp</li>
+          <li>Configure timestamp format and type in the settings above</li>
+        </ul>
+      </section>
+    </main>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
