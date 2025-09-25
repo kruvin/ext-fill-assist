@@ -25,7 +25,8 @@ class InterviewFillAssistant {
       interviewStartTime: response.interviewStartTime,
       relativeFormat: response.relativeFormat || 'mm:ss',
       timerEnabled: response.timerEnabled !== false,
-      timerPosition: response.timerPosition || 'top-right'
+      timerPosition: response.timerPosition || 'top-right',
+      themeMode: response.themeMode || 'auto'
     };
 
     // Listen for state changes and popup messages
@@ -41,7 +42,8 @@ class InterviewFillAssistant {
           interviewStartTime: this.config.interviewStartTime,
           relativeFormat: this.config.relativeFormat,
           timerEnabled: this.config.timerEnabled,
-          timerPosition: this.config.timerPosition
+          timerPosition: this.config.timerPosition,
+          themeMode: this.config.themeMode
         });
       } else if (request.action === 'setActive') {
         // Handle setActive requests from popup
@@ -86,6 +88,10 @@ class InterviewFillAssistant {
     }
     if (changes.timerPosition) {
       this.config.timerPosition = changes.timerPosition.newValue;
+      this.updateTimerDisplay();
+    }
+    if (changes.themeMode) {
+      this.config.themeMode = changes.themeMode.newValue;
       this.updateTimerDisplay();
     }
   }
@@ -372,18 +378,30 @@ class InterviewFillAssistant {
   }
 
   getTimerStyles() {
+    // Determine theme based on user preference
+    let shouldUseDarkTheme = false;
+    
+    if (this.config.themeMode === 'dark') {
+      shouldUseDarkTheme = true;
+    } else if (this.config.themeMode === 'light') {
+      shouldUseDarkTheme = false;
+    } else {
+      // Auto mode - follow system preference
+      shouldUseDarkTheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    
     const baseStyles = `
       position: fixed;
       z-index: 10000;
-      background: rgba(52, 152, 219, 0.95);
-      color: white;
+      background: ${shouldUseDarkTheme ? 'rgba(45, 45, 45, 0.95)' : 'rgba(52, 152, 219, 0.95)'};
+      color: ${shouldUseDarkTheme ? '#e0e0e0' : 'white'};
       padding: 8px 12px;
       border-radius: 6px;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       font-size: 14px;
       font-weight: 500;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: ${shouldUseDarkTheme ? '0 2px 8px rgba(0, 0, 0, 0.4)' : '0 2px 8px rgba(0, 0, 0, 0.2)'};
+      border: 1px solid ${shouldUseDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.2)'};
       backdrop-filter: blur(10px);
       user-select: none;
       pointer-events: none;

@@ -13,6 +13,9 @@ class PopupManager {
     // Set up event listeners
     this.setupEventListeners();
     
+    // Apply theme detection
+    this.applyTheme();
+    
     // Update UI
     this.updateUI();
   }
@@ -31,7 +34,8 @@ class PopupManager {
         interviewStartTime: response.interviewStartTime,
         relativeFormat: response.relativeFormat || 'mm:ss',
         timerEnabled: response.timerEnabled !== false,
-        timerPosition: response.timerPosition || 'top-right'
+        timerPosition: response.timerPosition || 'top-right',
+        themeMode: response.themeMode || 'auto'
       };
     } catch (error) {
       console.error('Failed to load state:', error);
@@ -69,6 +73,12 @@ class PopupManager {
 
     document.getElementById('timerPosition').addEventListener('change', (e) => {
       this.updateConfig({ timerPosition: e.target.value });
+    });
+
+    // Theme configuration
+    document.getElementById('themeMode').addEventListener('change', (e) => {
+      this.updateConfig({ themeMode: e.target.value });
+      this.applyTheme();
     });
 
     // Set to now button
@@ -112,6 +122,12 @@ class PopupManager {
     this.config = { ...this.config, ...newConfig };
     
     try {
+      // Save to background script storage
+      await chrome.runtime.sendMessage({
+        action: 'updateConfig',
+        config: this.config
+      });
+      
       // Get current active tab
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       
@@ -173,6 +189,7 @@ class PopupManager {
     document.getElementById('relativeFormat').value = this.config.relativeFormat;
     document.getElementById('timerEnabled').value = this.config.timerEnabled.toString();
     document.getElementById('timerPosition').value = this.config.timerPosition;
+    document.getElementById('themeMode').value = this.config.themeMode;
     
     if (this.config.interviewStartTime) {
       document.getElementById('interviewStartTime').value = this.config.interviewStartTime;
@@ -180,6 +197,41 @@ class PopupManager {
 
     // Update visibility of time config sections
     this.toggleTimeConfigVisibility();
+  }
+
+  applyTheme() {
+    // Remove existing theme classes
+    document.body.classList.remove('dark-theme', 'light-theme');
+    
+    // Determine theme based on user preference
+    if (this.config.themeMode === 'dark') {
+      document.body.classList.add('dark-theme');
+    } else if (this.config.themeMode === 'light') {
+      document.body.classList.add('light-theme');
+    } else {
+      // Auto mode - follow system preference
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (prefersDark) {
+        document.body.classList.add('dark-theme');
+      } else {
+        document.body.classList.add('light-theme');
+      }
+    }
+    
+    // Listen for system theme changes only in auto mode
+    if (this.config.themeMode === 'auto') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      mediaQuery.addEventListener('change', (e) => {
+        if (this.config.themeMode === 'auto') {
+          document.body.classList.remove('dark-theme', 'light-theme');
+          if (e.matches) {
+            document.body.classList.add('dark-theme');
+          } else {
+            document.body.classList.add('light-theme');
+          }
+        }
+      });
+    }
   }
 }
 

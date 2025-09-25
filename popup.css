@@ -11,6 +11,99 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: #f8f9fa;
   color: #333;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #1a1a1a;
+    color: #e0e0e0;
+  }
+}
+
+/* Manual theme classes */
+body.dark-theme {
+  background: #1a1a1a !important;
+  color: #e0e0e0 !important;
+}
+
+body.light-theme {
+  background: #f8f9fa !important;
+  color: #333 !important;
+}
+
+body.light-theme header h1 {
+  color: #2c3e50 !important;
+}
+
+body.light-theme .status-section {
+  background: white !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+body.light-theme .config-section {
+  background: white !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+body.light-theme .config-section h3 {
+  color: #2c3e50 !important;
+}
+
+body.light-theme .config-group label {
+  color: #555 !important;
+}
+
+body.light-theme .config-group select,
+body.light-theme .config-group input {
+  background: white !important;
+  border-color: #ddd !important;
+  color: #333 !important;
+}
+
+body.light-theme .instructions-section {
+  background: white !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+body.light-theme .instructions-section h3 {
+  color: #2c3e50 !important;
+}
+
+body.light-theme .instructions-section li {
+  color: #666 !important;
+}
+
+body.light-theme .config-section.timer-section {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+  border-left: 4px solid #3498db !important;
+}
+
+body.light-theme .config-section.timer-section h3 {
+  color: #2c3e50 !important;
+}
+
+body.light-theme .config-section.theme-section {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+  border-left: 4px solid #9b59b6 !important;
+}
+
+body.light-theme .config-section.theme-section h3 {
+  color: #2c3e50 !important;
+}
+
+body.light-theme #statusText {
+  color: #333 !important;
+}
+
+body.light-theme .small-button {
+  background: #95a5a6 !important;
+  color: white !important;
+}
+
+body.light-theme .small-button:hover {
+  background: #7f8c8d !important;
 }
 
 .container {
@@ -26,6 +119,17 @@ header h1 {
   font-size: 18px;
   font-weight: 600;
   color: #2c3e50;
+  transition: color 0.3s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  header h1 {
+    color: #ffffff;
+  }
+}
+
+body.dark-theme header h1 {
+  color: #ffffff !important;
 }
 
 /* Status Section */
@@ -35,6 +139,19 @@ header h1 {
   padding: 16px;
   margin-bottom: 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  .status-section {
+    background: #2d2d2d;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+}
+
+body.dark-theme .status-section {
+  background: #2d2d2d !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
 }
 
 .status-indicator {
@@ -98,6 +215,19 @@ header h1 {
   padding: 16px;
   margin-bottom: 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  .config-section {
+    background: #2d2d2d;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+}
+
+body.dark-theme .config-section {
+  background: #2d2d2d !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
 }
 
 .config-section h3 {
@@ -105,6 +235,17 @@ header h1 {
   font-weight: 600;
   margin-bottom: 16px;
   color: #2c3e50;
+  transition: color 0.3s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  .config-section h3 {
+    color: #ffffff;
+  }
+}
+
+body.dark-theme .config-section h3 {
+  color: #ffffff !important;
 }
 
 .config-group {
@@ -121,6 +262,17 @@ header h1 {
   font-weight: 500;
   margin-bottom: 6px;
   color: #555;
+  transition: color 0.3s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  .config-group label {
+    color: #b0b0b0;
+  }
+}
+
+body.dark-theme .config-group label {
+  color: #b0b0b0 !important;
 }
 
 .config-group select,
@@ -131,7 +283,24 @@ header h1 {
   border-radius: 4px;
   font-size: 14px;
   background: white;
-  transition: border-color 0.3s ease;
+  color: #333;
+  transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  .config-group select,
+  .config-group input {
+    background: #3d3d3d;
+    border-color: #555;
+    color: #e0e0e0;
+  }
+}
+
+body.dark-theme .config-group select,
+body.dark-theme .config-group input {
+  background: #3d3d3d !important;
+  border-color: #555 !important;
+  color: #e0e0e0 !important;
 }
 
 .config-group select:focus,
@@ -168,12 +337,47 @@ header h1 {
   margin-bottom: 16px;
 }
 
+/* Theme Configuration Section */
+.config-section.theme-section {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-left: 4px solid #9b59b6;
+}
+
+.config-section.theme-section h3 {
+  color: #2c3e50;
+  margin-bottom: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .config-section.theme-section {
+    background: linear-gradient(135deg, #2d2d2d 0%, #3d3d3d 100%);
+    border-left: 4px solid #9b59b6;
+  }
+  
+  .config-section.theme-section h3 {
+    color: #ffffff;
+  }
+}
+
 /* Instructions Section */
 .instructions-section {
   background: white;
   border-radius: 8px;
   padding: 16px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  .instructions-section {
+    background: #2d2d2d;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+}
+
+body.dark-theme .instructions-section {
+  background: #2d2d2d !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
 }
 
 .instructions-section h3 {
@@ -181,6 +385,17 @@ header h1 {
   font-weight: 600;
   margin-bottom: 12px;
   color: #2c3e50;
+  transition: color 0.3s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  .instructions-section h3 {
+    color: #ffffff;
+  }
+}
+
+body.dark-theme .instructions-section h3 {
+  color: #ffffff !important;
 }
 
 .instructions-section ul {
@@ -195,6 +410,17 @@ header h1 {
   padding-left: 16px;
   position: relative;
   color: #666;
+  transition: color 0.3s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  .instructions-section li {
+    color: #b0b0b0;
+  }
+}
+
+body.dark-theme .instructions-section li {
+  color: #b0b0b0 !important;
 }
 
 .instructions-section li:before {
