@@ -19,8 +19,12 @@ class PopupManager {
 
   async loadState() {
     try {
-      const response = await chrome.runtime.sendMessage({ action: 'getState' });
-      this.isActive = response.isActive || false;
+      // Get current active tab
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      
+      // Send message to current tab to get state
+      const response = await chrome.tabs.sendMessage(tab.id, { action: 'getState' });
+      this.isActive = response.isActiveInThisTab || false;
       this.config = {
         timestampFormat: response.timestampFormat || 'absolute',
         timeFormat: response.timeFormat || 'HH:mm:ss',
@@ -87,7 +91,11 @@ class PopupManager {
     }
 
     try {
-      await chrome.runtime.sendMessage({
+      // Get current active tab
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      
+      // Send message to current tab to set active state
+      await chrome.tabs.sendMessage(tab.id, {
         action: 'setActive',
         isActive: this.isActive,
         startTime: this.isActive ? this.config.interviewStartTime : null
@@ -104,7 +112,11 @@ class PopupManager {
     this.config = { ...this.config, ...newConfig };
     
     try {
-      await chrome.runtime.sendMessage({
+      // Get current active tab
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      
+      // Send message to current tab to update config
+      await chrome.tabs.sendMessage(tab.id, {
         action: 'updateConfig',
         config: this.config
       });

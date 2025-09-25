@@ -18,7 +18,7 @@ class InterviewFillAssistant {
   async initialize() {
     // Get initial state from background script
     const response = await chrome.runtime.sendMessage({ action: 'getState' });
-    this.isActive = response.isActive;
+    this.isActive = response.isActiveInThisTab || false; // Only active in the specific tab
     this.config = {
       timestampFormat: response.timestampFormat || 'absolute',
       timeFormat: response.timeFormat || 'HH:mm:ss',
@@ -28,10 +28,34 @@ class InterviewFillAssistant {
       timerPosition: response.timerPosition || 'top-right'
     };
 
-    // Listen for state changes
+    // Listen for state changes and popup messages
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (request.action === 'stateChanged') {
-        this.handleStateChange(request.changes);
+        this.handleStateChange(request.changes, request.isActiveInThisTab);
+      } else if (request.action === 'getState') {
+        // Handle getState requests from popup
+        sendResponse({
+          isActiveInThisTab: this.isActive,
+          timestampFormat: this.config.timestampFormat,
+          timeFormat: this.config.timeFormat,
+          interviewStartTime: this.config.interviewStartTime,
+          relativeFormat: this.config.relativeFormat,
+          timerEnabled: this.config.timerEnabled,
+          timerPosition: this.config.timerPosition
+        });
+      } else if (request.action === 'setActive') {
+        // Handle setActive requests from popup
+        this.isActive = request.isActive;
+        if (request.isActive && request.startTime) {
+          this.config.interviewStartTime = request.startTime;
+        }
+        this.updateTimerDisplay();
+        sendResponse({ success: true });
+      } else if (request.action === 'updateConfig') {
+        // Handle updateConfig requests from popup
+        this.config = { ...this.config, ...request.config };
+        this.updateTimerDisplay();
+        sendResponse({ success: true });
       }
     });
 
@@ -39,9 +63,9 @@ class InterviewFillAssistant {
     this.setupTextListeners();
   }
 
-  handleStateChange(changes) {
+  handleStateChange(changes, isActiveInThisTab) {
     if (changes.isActive) {
-      this.isActive = changes.isActive.newValue;
+      this.isActive = isActiveInThisTab || false; // Only active in the specific tab
       this.updateTimerDisplay();
     }
     if (changes.timestampFormat) {
@@ -125,22 +149,52 @@ class InterviewFillAssistant {
   }
 
   addTimestamp(element) {
-    const timestamp = this.getFormattedTimestamp();
-    const currentValue = this.getElementValue(element);
-    const cursorPosition = this.getCursorPosition(element);
-    
-    // Insert timestamp at the beginning of the current line
-    const lines = currentValue.split('\n');
-    const currentLineIndex = currentValue.substring(0, cursorPosition).split('\n').length - 1;
-    
-    if (currentLineIndex < lines.length) {
-      lines[currentLineIndex] = timestamp + lines[currentLineIndex];
-      const newValue = lines.join('\n');
-      this.setElementValue(element, newValue);
+    try {
+      const timestamp = this.getFormattedTimestamp();
       
-      // Adjust cursor position
-      const newCursorPosition = cursorPosition + timestamp.length;
-      this.setCursorPosition(element, newCursorPosition);
+      if (element.tagName === 'TEXTAREA' || element.tagName === 'INPUT') {
+        // For input/textarea elements, use precise cursor positioning
+        const currentValue = this.getElementValue(element);
+        const cursorPosition = this.getCursorPosition(element);
+        
+        // Insert timestamp at the beginning of the current line
+        const lines = currentValue.split('\n');
+        const currentLineIndex = currentValue.substring(0, cursorPosition).split('\n').length - 1;
+        
+        if (currentLineIndex < lines.length) {
+          lines[currentLineIndex] = timestamp + lines[currentLineIndex];
+          const newValue = lines.join('\n');
+          this.setElementValue(element, newValue);
+          
+          // Adjust cursor position safely
+          const newCursorPosition = cursorPosition + timestamp.length;
+          const maxPosition = newValue.length;
+          const safePosition = Math.min(newCursorPosition, maxPosition);
+          
+          // Use setTimeout to ensure DOM is updated before setting cursor
+          setTimeout(() => {
+            this.setCursorPosition(element, safePosition);
+          }, 0);
+        }
+      } else {
+        // For contenteditable elements, use simpler approach
+        // Just add timestamp at the end to avoid cursor positioning issues
+        const currentValue = this.getElementValue(element);
+        const newValue = currentValue + '\n' + timestamp + ' ';
+        this.setElementValue(element, newValue);
+        
+        // Focus the element and place cursor at the end
+        setTimeout(() => {
+          element.focus();
+          this.setCursorPosition(element, newValue.length);
+        }, 0);
+      }
+    } catch (error) {
+      console.warn('Failed to add timestamp:', error);
+      // Fallback: just add timestamp at the end
+      const timestamp = this.getFormattedTimestamp();
+      const currentValue = this.getElementValue(element);
+      this.setElementValue(element, currentValue + '\n' + timestamp + ' ');
     }
   }
 
@@ -203,35 +257,84 @@ class InterviewFillAssistant {
     if (element.tagName === 'TEXTAREA' || element.tagName === 'INPUT') {
       element.value = value;
     } else {
-      element.textContent = value;
+      // For contenteditable elements, preserve the structure better
+      try {
+        element.textContent = value;
+      } catch (error) {
+        console.warn('Failed to set element value:', error);
+        // Fallback: try innerHTML
+        element.innerHTML = value.replace(/\n/g, '<br>');
+      }
     }
   }
 
   getCursorPosition(element) {
     if (element.tagName === 'TEXTAREA' || element.tagName === 'INPUT') {
-      return element.selectionStart;
+      return element.selectionStart || 0;
     } else {
       const selection = window.getSelection();
       if (selection.rangeCount > 0) {
         const range = selection.getRangeAt(0);
-        return range.startOffset;
+        const startContainer = range.startContainer;
+        
+        // Handle different node types
+        if (startContainer.nodeType === Node.TEXT_NODE) {
+          return range.startOffset;
+        } else {
+          // For non-text nodes, try to find the text position
+          const textContent = element.textContent || '';
+          return Math.min(range.startOffset, textContent.length);
+        }
       }
       return 0;
     }
   }
 
   setCursorPosition(element, position) {
-    if (element.tagName === 'TEXTAREA' || element.tagName === 'INPUT') {
-      element.setSelectionRange(position, position);
-    } else {
-      const selection = window.getSelection();
-      if (selection.rangeCount > 0) {
-        const range = selection.getRangeAt(0);
-        range.setStart(range.startContainer, position);
-        range.setEnd(range.startContainer, position);
-        selection.removeAllRanges();
-        selection.addRange(range);
+    try {
+      if (element.tagName === 'TEXTAREA' || element.tagName === 'INPUT') {
+        // Ensure position is within bounds
+        const maxPosition = element.value.length;
+        const safePosition = Math.min(Math.max(0, position), maxPosition);
+        element.setSelectionRange(safePosition, safePosition);
+      } else {
+        // For contenteditable elements, use a simpler approach
+        // Just focus the element and place cursor at the end
+        element.focus();
+        
+        // Try to place cursor at the end of the content
+        const selection = window.getSelection();
+        if (selection) {
+          selection.removeAllRanges();
+          
+          // Find the last text node in the element
+          const walker = document.createTreeWalker(
+            element,
+            NodeFilter.SHOW_TEXT,
+            null,
+            false
+          );
+          
+          let lastTextNode = null;
+          let node;
+          while (node = walker.nextNode()) {
+            lastTextNode = node;
+          }
+          
+          if (lastTextNode) {
+            const range = document.createRange();
+            const textLength = lastTextNode.textContent.length;
+            const safeOffset = Math.min(position, textLength);
+            range.setStart(lastTextNode, safeOffset);
+            range.setEnd(lastTextNode, safeOffset);
+            selection.addRange(range);
+          }
+        }
       }
+    } catch (error) {
+      console.warn('Failed to set cursor position:', error);
+      // Fallback: just focus the element
+      element.focus();
     }
   }
 

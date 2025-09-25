@@ -1,4 +1,6 @@
 // Background script for managing extension state
+let activeTabId = null;
+
 chrome.runtime.onInstalled.addListener(() => {
   // Set default configuration
   chrome.storage.sync.set({
@@ -16,6 +18,8 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'getState') {
     chrome.storage.sync.get(['isActive', 'timestampFormat', 'timeFormat', 'interviewStartTime', 'relativeFormat', 'timerEnabled', 'timerPosition'], (result) => {
+      // Check if this tab is the active interview tab
+      result.isActiveInThisTab = result.isActive && activeTabId === sender.tab.id;
       sendResponse(result);
     });
     return true; // Keep message channel open for async response
@@ -25,6 +29,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     chrome.storage.sync.set({ isActive: request.isActive });
     if (request.isActive && request.startTime) {
       chrome.storage.sync.set({ interviewStartTime: request.startTime });
+      activeTabId = sender.tab.id; // Set this tab as the active interview tab
+    } else if (!request.isActive) {
+      activeTabId = null; // Clear active tab when interview stops
     }
     sendResponse({ success: true });
   }
@@ -44,7 +51,8 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
       tabs.forEach(tab => {
         chrome.tabs.sendMessage(tab.id, {
           action: 'stateChanged',
-          changes: changes
+          changes: changes,
+          isActiveInThisTab: changes.isActive ? activeTabId === tab.id : false
         }).catch(() => {
           // Ignore errors for tabs that don't have content script
         });
