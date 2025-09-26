@@ -20,8 +20,8 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'getState') {
     chrome.storage.sync.get(['isActive', 'timestampFormat', 'timeFormat', 'interviewStartTime', 'relativeFormat', 'timerEnabled', 'timerPosition', 'themeMode', 'postCooldown'], (result) => {
-      // Check if this tab is the active interview tab
-      result.isActiveInThisTab = result.isActive && activeTabId === sender.tab.id;
+      // Check if this tab is the active interview tab (handle cases where sender.tab might be undefined)
+      result.isActiveInThisTab = result.isActive && activeTabId === (sender.tab ? sender.tab.id : null);
       
       // Ensure all values have defaults
       const response = {
@@ -46,7 +46,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     chrome.storage.sync.set({ isActive: request.isActive });
     if (request.isActive && request.startTime) {
       chrome.storage.sync.set({ interviewStartTime: request.startTime });
-      activeTabId = sender.tab.id; // Set this tab as the active interview tab
+      activeTabId = sender.tab ? sender.tab.id : null; // Set this tab as the active interview tab
     } else if (!request.isActive) {
       activeTabId = null; // Clear active tab when interview stops
     }
