@@ -9,7 +9,7 @@ class InterviewFillAssistant {
       relativeFormat: 'mm:ss',
       timerEnabled: true,
       timerPosition: 'top-right',
-      postCooldown: 5
+      postCooldown: 10
     };
     this.timerElement = null;
     this.timerInterval = null;
@@ -29,7 +29,7 @@ class InterviewFillAssistant {
       timerEnabled: response.timerEnabled !== false,
       timerPosition: response.timerPosition || 'top-right',
       themeMode: response.themeMode || 'auto',
-      postCooldown: response.postCooldown || 5
+      postCooldown: response.postCooldown || 10
     };
 
     // Listen for state changes and popup messages
