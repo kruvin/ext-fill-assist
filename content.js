@@ -208,10 +208,13 @@ class InterviewFillAssistant {
     const now = new Date();
     
     if (this.config.timestampFormat === 'relative' && this.config.interviewStartTime) {
-      // Parse the time string (HH:MM format)
-      const [hours, minutes] = this.config.interviewStartTime.split(':').map(Number);
+      // Parse the time string (HH:MM[:SS] format)
+      const parts = this.config.interviewStartTime.split(':').map(Number);
+      const hours = parts[0] || 0;
+      const minutes = parts[1] || 0;
+      const seconds = parts[2] || 0;
       const startTime = new Date();
-      startTime.setHours(hours, minutes, 0, 0);
+      startTime.setHours(hours, minutes, seconds, 0);
       
       // If the start time is in the future (next day), subtract 24 hours
       if (startTime > now) {
@@ -451,10 +454,13 @@ class InterviewFillAssistant {
 
     // Timer always shows relative time from interview start in mm:ss format
     if (this.config.interviewStartTime) {
-      // Parse the time string (HH:MM format)
-      const [hours, minutes] = this.config.interviewStartTime.split(':').map(Number);
+      // Parse the time string (HH:MM[:SS] format)
+      const parts = this.config.interviewStartTime.split(':').map(Number);
+      const hours = parts[0] || 0;
+      const minutes = parts[1] || 0;
+      const seconds = parts[2] || 0;
       const startTime = new Date();
-      startTime.setHours(hours, minutes, 0, 0);
+      startTime.setHours(hours, minutes, seconds, 0);
       
       // If the start time is in the future (next day), subtract 24 hours
       if (startTime > now) {

@@ -128,13 +128,19 @@ class PopupManager {
     this.isActive = !this.isActive;
     
     if (this.isActive) {
-      // Set interview start time if not already set
-      if (!this.config.interviewStartTime) {
-        const now = new Date();
-        const hours = now.getHours().toString().padStart(2, '0');
-        const minutes = now.getMinutes().toString().padStart(2, '0');
-        this.config.interviewStartTime = `${hours}:${minutes}`;
+      // Always set interview start time to now (HH:MM:SS) when starting
+      const now = new Date();
+      const hours = now.getHours().toString().padStart(2, '0');
+      const minutes = now.getMinutes().toString().padStart(2, '0');
+      const seconds = now.getSeconds().toString().padStart(2, '0');
+      const timeString = `${hours}:${minutes}:${seconds}`;
+      this.config.interviewStartTime = timeString;
+      const inputEl = document.getElementById('interviewStartTime');
+      if (inputEl) {
+        inputEl.value = timeString;
       }
+      // Persist updated start time before activating
+      await this.updateConfig({ interviewStartTime: timeString });
     }
 
     try {
@@ -182,7 +188,8 @@ class PopupManager {
     const now = new Date();
     const hours = now.getHours().toString().padStart(2, '0');
     const minutes = now.getMinutes().toString().padStart(2, '0');
-    const timeString = `${hours}:${minutes}`;
+    const seconds = now.getSeconds().toString().padStart(2, '0');
+    const timeString = `${hours}:${minutes}:${seconds}`;
     
     document.getElementById('interviewStartTime').value = timeString;
     this.updateConfig({ interviewStartTime: timeString });
