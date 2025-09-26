@@ -401,8 +401,8 @@ class InterviewFillAssistant {
       this.timerInterval = null;
     }
 
-    // Don't show timer if not active or disabled
-    if (!this.isActive || !this.config.timerEnabled) {
+    // Don't show timer if disabled
+    if (!this.config.timerEnabled) {
       return;
     }
 
@@ -411,8 +411,32 @@ class InterviewFillAssistant {
     this.timerElement.id = 'interview-timer';
     this.timerElement.style.cssText = this.getTimerStyles();
     
+    // Create timer content with button
+    this.timerElement.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span id="timer-text" style="pointer-events: none;">00:00</span>
+        <button id="timer-toggle-btn" style="
+          background: rgba(255, 255, 255, 0.2);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          color: white;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 12px;
+          cursor: pointer;
+          transition: background 0.2s;
+          pointer-events: auto;
+        " onmouseover="this.style.background='rgba(255, 255, 255, 0.3)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.2)'">Start</button>
+      </div>
+    `;
+    
     // Add to page
     document.body.appendChild(this.timerElement);
+    
+    // Add button click handler
+    const toggleBtn = this.timerElement.querySelector('#timer-toggle-btn');
+    toggleBtn.addEventListener('click', () => {
+      this.toggleInterviewFromTimer();
+    });
     
     // Start timer update
     this.updateTimerText();
@@ -448,7 +472,6 @@ class InterviewFillAssistant {
       border: 1px solid ${shouldUseDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.2)'};
       backdrop-filter: blur(10px);
       user-select: none;
-      pointer-events: none;
       transition: all 0.3s ease;
     `;
 
@@ -466,11 +489,19 @@ class InterviewFillAssistant {
   updateTimerText() {
     if (!this.timerElement) return;
 
+    const timerText = this.timerElement.querySelector('#timer-text');
+    const toggleBtn = this.timerElement.querySelector('#timer-toggle-btn');
+    
+    if (!timerText || !toggleBtn) return;
+
     const now = new Date();
     let displayText = '';
 
-    // Timer always shows relative time from interview start in mm:ss format
-    if (this.config.interviewStartTime) {
+    // Update button text based on interview state
+    toggleBtn.textContent = this.isActive ? 'Stop' : 'Start';
+
+    // Timer shows different content based on interview state
+    if (this.isActive && this.config.interviewStartTime) {
       // Parse the time string (HH:MM[:SS] format)
       const parts = this.config.interviewStartTime.split(':').map(Number);
       const hours = parts[0] || 0;
@@ -487,11 +518,44 @@ class InterviewFillAssistant {
       const elapsed = now - startTime;
       displayText = this.formatTimerRelativeTime(elapsed);
     } else {
-      // Fallback to current time if no start time set
-      displayText = this.formatAbsoluteTime(now);
+      // Show current time when not active
+      const hours = now.getHours().toString().padStart(2, '0');
+      const minutes = now.getMinutes().toString().padStart(2, '0');
+      displayText = `${hours}:${minutes}`;
     }
 
-    this.timerElement.textContent = `${displayText}`;
+    timerText.textContent = displayText;
+  }
+
+  async toggleInterviewFromTimer() {
+    try {
+      // Toggle the interview state
+      this.isActive = !this.isActive;
+      
+      if (this.isActive) {
+        // Set interview start time to now when starting
+        const now = new Date();
+        const hours = now.getHours().toString().padStart(2, '0');
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+        const seconds = now.getSeconds().toString().padStart(2, '0');
+        this.config.interviewStartTime = `${hours}:${minutes}:${seconds}`;
+      }
+      
+      // Send message to background script to update state
+      await chrome.runtime.sendMessage({
+        action: 'setActive',
+        isActive: this.isActive,
+        startTime: this.isActive ? this.config.interviewStartTime : null
+      });
+      
+      // Update timer display
+      this.updateTimerText();
+      
+    } catch (error) {
+      console.error('Failed to toggle interview from timer:', error);
+      // Revert state on error
+      this.isActive = !this.isActive;
+    }
   }
 
   // Handle timer positioning over focused element
