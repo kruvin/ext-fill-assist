@@ -8,10 +8,12 @@ class InterviewFillAssistant {
       interviewStartTime: null,
       relativeFormat: 'mm:ss',
       timerEnabled: true,
-      timerPosition: 'top-right'
+      timerPosition: 'top-right',
+      postCooldown: 5
     };
     this.timerElement = null;
     this.timerInterval = null;
+    this.lastTimestampTime = 0; // Track when last timestamp was added
     this.initialize();
   }
 
@@ -26,7 +28,8 @@ class InterviewFillAssistant {
       relativeFormat: response.relativeFormat || 'mm:ss',
       timerEnabled: response.timerEnabled !== false,
       timerPosition: response.timerPosition || 'top-right',
-      themeMode: response.themeMode || 'auto'
+      themeMode: response.themeMode || 'auto',
+      postCooldown: response.postCooldown || 5
     };
 
     // Listen for state changes and popup messages
@@ -43,7 +46,8 @@ class InterviewFillAssistant {
           relativeFormat: this.config.relativeFormat,
           timerEnabled: this.config.timerEnabled,
           timerPosition: this.config.timerPosition,
-          themeMode: this.config.themeMode
+          themeMode: this.config.themeMode,
+          postCooldown: this.config.postCooldown
         });
       } else if (request.action === 'setActive') {
         // Handle setActive requests from popup
@@ -93,6 +97,9 @@ class InterviewFillAssistant {
     if (changes.themeMode) {
       this.config.themeMode = changes.themeMode.newValue;
       this.updateTimerDisplay();
+    }
+    if (changes.postCooldown) {
+      this.config.postCooldown = changes.postCooldown.newValue;
     }
   }
 
@@ -148,8 +155,18 @@ class InterviewFillAssistant {
       
       // Check if the input is non-whitespace
       if (inputValue && inputValue.trim() !== '') {
-        this.addTimestamp(element);
-        element.dataset.needsTimestamp = 'false';
+        // Check cooldown before adding timestamp
+        const now = Date.now();
+        const timeSinceLastTimestamp = (now - this.lastTimestampTime) / 1000; // Convert to seconds
+        
+        if (timeSinceLastTimestamp >= this.config.postCooldown) {
+          this.addTimestamp(element);
+          this.lastTimestampTime = now; // Update last timestamp time
+          element.dataset.needsTimestamp = 'false';
+        } else {
+          // Still in cooldown, keep the flag for next input
+          console.log(`Timestamp cooldown active: ${Math.ceil(this.config.postCooldown - timeSinceLastTimestamp)}s remaining`);
+        }
       }
     }
   }

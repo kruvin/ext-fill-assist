@@ -11,14 +11,15 @@ chrome.runtime.onInstalled.addListener(() => {
     relativeFormat: 'mm:ss',
     timerEnabled: true,
     timerPosition: 'top-right',
-    themeMode: 'auto'
+    themeMode: 'auto',
+    postCooldown: 10
   });
 });
 
 // Handle messages from content script and popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'getState') {
-    chrome.storage.sync.get(['isActive', 'timestampFormat', 'timeFormat', 'interviewStartTime', 'relativeFormat', 'timerEnabled', 'timerPosition', 'themeMode'], (result) => {
+    chrome.storage.sync.get(['isActive', 'timestampFormat', 'timeFormat', 'interviewStartTime', 'relativeFormat', 'timerEnabled', 'timerPosition', 'themeMode', 'postCooldown'], (result) => {
       // Check if this tab is the active interview tab
       result.isActiveInThisTab = result.isActive && activeTabId === sender.tab.id;
       
@@ -32,6 +33,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         timerEnabled: result.timerEnabled !== false,
         timerPosition: result.timerPosition || 'top-right',
         themeMode: result.themeMode || 'auto',
+        postCooldown: result.postCooldown || 10,
         isActiveInThisTab: result.isActive && activeTabId === sender.tab.id
       };
       

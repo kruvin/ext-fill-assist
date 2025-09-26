@@ -42,7 +42,8 @@ class PopupManager {
         relativeFormat: response.relativeFormat || 'mm:ss',
         timerEnabled: response.timerEnabled !== false,
         timerPosition: response.timerPosition || 'top-right',
-        themeMode: response.themeMode || 'auto'
+        themeMode: response.themeMode || 'auto',
+        postCooldown: response.postCooldown || 5
       };
     } catch (error) {
       console.error('Failed to load state from tab, trying background script:', error);
@@ -58,7 +59,8 @@ class PopupManager {
           relativeFormat: response.relativeFormat || 'mm:ss',
           timerEnabled: response.timerEnabled !== false,
           timerPosition: response.timerPosition || 'top-right',
-          themeMode: response.themeMode || 'auto'
+          themeMode: response.themeMode || 'auto',
+          postCooldown: response.postCooldown || 5
         };
       } catch (fallbackError) {
         console.error('Failed to load state from background script:', fallbackError);
@@ -71,7 +73,8 @@ class PopupManager {
           relativeFormat: 'mm:ss',
           timerEnabled: true,
           timerPosition: 'top-right',
-          themeMode: 'auto'
+          themeMode: 'auto',
+          postCooldown: 5
         };
       }
     }
@@ -100,6 +103,10 @@ class PopupManager {
 
     document.getElementById('interviewStartTime').addEventListener('change', (e) => {
       this.updateConfig({ interviewStartTime: e.target.value });
+    });
+
+    document.getElementById('postCooldown').addEventListener('change', (e) => {
+      this.updateConfig({ postCooldown: parseInt(e.target.value) || 0 });
     });
 
     // Timer configuration
@@ -246,6 +253,7 @@ class PopupManager {
     document.getElementById('timerEnabled').checked = this.config.timerEnabled;
     document.getElementById('timerPosition').value = this.config.timerPosition;
     document.getElementById('themeMode').value = this.config.themeMode;
+    document.getElementById('postCooldown').value = this.config.postCooldown;
     
     if (this.config.interviewStartTime) {
       document.getElementById('interviewStartTime').value = this.config.interviewStartTime;
