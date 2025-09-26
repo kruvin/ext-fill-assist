@@ -114,14 +114,7 @@ class InterviewFillAssistant {
       }
     });
 
-    // Listen for keydown events to detect line breaks
-    document.addEventListener('keydown', (event) => {
-      if (!this.isActive) return;
-      
-      if (event.key === 'Enter' && this.isTextInput(event.target)) {
-        this.handleLineBreak(event.target);
-      }
-    });
+    // Note: No longer need to listen for Enter key since we detect beginning of line directly
 
     // Listen for focus changes to update timer position
     document.addEventListener('focusin', (event) => {
@@ -144,30 +137,43 @@ class InterviewFillAssistant {
            element.isContentEditable;
   }
 
-  handleLineBreak(element) {
-    // Set a flag to indicate we need to add timestamp on next non-whitespace input
-    element.dataset.needsTimestamp = 'true';
+  handleTextInput(element, event) {
+    const inputValue = event.data;
+    
+    // Check if this is at the beginning of a line
+    const isAtBeginningOfLine = this.isAtBeginningOfLine(element, inputValue);
+    
+    console.log('Text input detected:', {
+      inputValue,
+      isAtBeginningOfLine,
+      cursorPosition: this.getCursorPosition(element),
+      elementValue: this.getElementValue(element)
+    });
+    
+    if (isAtBeginningOfLine && inputValue && inputValue.trim() !== '') {
+      // Check cooldown before adding timestamp
+      const now = Date.now();
+      const timeSinceLastTimestamp = (now - this.lastTimestampTime) / 1000; // Convert to seconds
+      
+      if (timeSinceLastTimestamp >= this.config.postCooldown) {
+        console.log('Adding timestamp...');
+        this.addTimestamp(element);
+        this.lastTimestampTime = now; // Update last timestamp time
+      } else {
+        // Still in cooldown
+        console.log(`Timestamp cooldown active: ${Math.ceil(this.config.postCooldown - timeSinceLastTimestamp)}s remaining`);
+      }
+    }
   }
 
-  handleTextInput(element, event) {
-    if (element.dataset.needsTimestamp === 'true') {
-      const inputValue = event.data;
-      
-      // Check if the input is non-whitespace
-      if (inputValue && inputValue.trim() !== '') {
-        // Check cooldown before adding timestamp
-        const now = Date.now();
-        const timeSinceLastTimestamp = (now - this.lastTimestampTime) / 1000; // Convert to seconds
-        
-        if (timeSinceLastTimestamp >= this.config.postCooldown) {
-          this.addTimestamp(element);
-          this.lastTimestampTime = now; // Update last timestamp time
-          element.dataset.needsTimestamp = 'false';
-        } else {
-          // Still in cooldown, keep the flag for next input
-          console.log(`Timestamp cooldown active: ${Math.ceil(this.config.postCooldown - timeSinceLastTimestamp)}s remaining`);
-        }
-      }
+  isAtBeginningOfLine(element, inputValue) {
+    const cursorPosition = this.getCursorPosition(element);
+    const currentValue = this.getElementValue(element);
+    
+    // check if element value is only the input value after removing whitespace
+    if (currentValue.trim() === inputValue) {
+      console.log('At beginning of line');
+      return true;
     }
   }
 
