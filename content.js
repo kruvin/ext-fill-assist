@@ -29,8 +29,13 @@ class InterviewFillAssistant {
       timerEnabled: response.timerEnabled !== false,
       timerPosition: response.timerPosition || 'top-right',
       themeMode: response.themeMode || 'auto',
-      postCooldown: response.postCooldown || 10
+      postCooldown: response.postCooldown !== undefined ? response.postCooldown : 10,
+      enableTextarea: response.enableTextarea !== false,
+      enableInput: response.enableInput !== false
     };
+
+    // Initialize timer display if needed
+    this.updateTimerDisplay();
 
     // Listen for state changes and popup messages
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
