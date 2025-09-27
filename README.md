@@ -1,6 +1,8 @@
 # Interview Fill Assistant
 
-A Chrome extension (Manifest V3) that assists in documenting interviews and forms in real time with automatic timestamp functionality.
+A Chrome extension that assists in documenting interviews and forms in real time with automatic timestamp functionality.
+
+![Example Form](form_example.png)
 
 ## Features
 
@@ -9,6 +11,11 @@ A Chrome extension (Manifest V3) that assists in documenting interviews and form
   - Absolute time (HH:mm:ss, HH:mm, or locale format)
   - Relative time from interview start (mm:ss or seconds only)
 - **Interview Controls**: Start/stop interview sessions with configurable start times
+- **Real-time Timer Display**: Visual timer showing elapsed interview time
+- **Input Type Configuration**: Toggle support for textarea elements and input boxes separately
+- **Post Cooldown**: Configurable delay between timestamps to prevent spam
+- **Theme Support**: Automatic light/dark mode with manual override
+- **Tab-Specific Activation**: Only active in the tab where interview was started
 - **Real-time Processing**: Works on any webpage with text inputs, textareas, and contenteditable elements
 
 ## Installation
@@ -22,9 +29,12 @@ A Chrome extension (Manifest V3) that assists in documenting interviews and form
 ## Usage
 
 1. **Start an Interview**: Click the extension icon and press "Start Interview"
-2. **Configure Timestamps**: Choose between absolute or relative time formats
+2. **Configure Settings**: Set timestamp format, timer display, input types, and cooldown
 3. **Begin Typing**: Navigate to any webpage with text inputs and start typing
 4. **Automatic Timestamps**: After pressing Enter, the next non-whitespace character will be prefixed with a timestamp
+
+![Extension Interface](ext_snapshot.png)
+![Extension Configuration](ext_snapshot2.png)
 
 ## Configuration Options
 
@@ -39,56 +49,44 @@ A Chrome extension (Manifest V3) that assists in documenting interviews and form
 - **mm:ss**: Minutes and seconds for relative time
 - **Seconds Only**: Just elapsed seconds for relative time
 
+### Timer Display
+- **Show Timer**: Toggle to enable/disable the visual timer
+- **Timer Position**: Choose from top-right, top-left, bottom-right, bottom-left, or over focused input
+- **Timer Format**: Always shows elapsed time in mm:ss format
+
+### Input Types
+- **Textarea Elements**: Toggle support for `<textarea>` elements
+- **Input Boxes**: Toggle support for `<input type="text">` elements
+- **Contenteditable**: Always supported (Google Docs, rich text editors)
+
+### Advanced Settings
+- **Post Cooldown**: Minimum seconds between timestamps (0-300 seconds)
+- **Theme Mode**: Auto (follow system), Light, or Dark theme
+- **Interview Start Time**: Set custom start time or use current time
+
 ## How It Works
 
 The extension monitors text input events across all webpages. When you:
-1. Press Enter (line break)
+1. Press Enter (line break) OR start typing in an empty field
 2. Type the next non-whitespace character
 
 The extension automatically inserts a timestamp at the beginning of that line.
 
 ## Supported Elements
 
-- `<textarea>` elements
-- `<input type="text">` elements  
-- Contenteditable elements
-- Any element with `contentEditable="true"`
+- `<textarea>` elements (configurable)
+- `<input type="text">` elements (configurable)
 
 ## Privacy
 
 This extension:
 - Only processes text input events locally in your browser
 - Does not send any data to external servers
-- Stores configuration settings locally using Chrome's storage API
+- Stores configuration settings locally using `chrome.storage` API
 - Works entirely offline
 
-## Development
-
-The extension is built with:
-- Manifest V3
-- Vanilla JavaScript (no external dependencies)
-- Chrome Extension APIs
-- Modern CSS with responsive design
-
-## File Structure
-
-```
-ext-fill-assist/
-├── manifest.json          # Extension manifest
-├── background.js          # Service worker for state management
-├── content.js            # Content script for text processing
-├── popup.html            # Extension popup interface
-├── popup.js              # Popup functionality
-├── popup.css             # Popup styling
-├── icons/                # Extension icons
-└── README.md             # This file
-```
-
-## Troubleshooting
-
-1. **Timestamps not appearing**: Make sure the extension is active (green dot in popup)
-2. **Not working on specific sites**: Some sites may have security restrictions; try refreshing the page
-3. **Configuration not saving**: Check that Chrome storage permissions are granted
+## Development & Joining
+Pull requests may be considered for adding new features, fixing issues, and even restructuring the code.
 
 ## License
 
