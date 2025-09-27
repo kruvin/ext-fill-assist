@@ -27,14 +27,11 @@ class PopupManager {
   }
 
   async loadState() {
+    // First try to get state from background script (more reliable)
     try {
-      // Get current active tab
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      
-      // Send message to current tab to get state
-      const response = await chrome.tabs.sendMessage(tab.id, { action: 'getState' });
-      console.log('Received response from tab:', response);
-      this.isActive = response.isActiveInThisTab || false;
+      const response = await chrome.runtime.sendMessage({ action: 'getState' });
+      console.log('Received response from background script:', response);
+      this.isActive = response.isActive || false;
       this.config = {
         timestampFormat: response.timestampFormat || 'absolute',
         timeFormat: response.timeFormat || 'HH:mm:ss',
@@ -46,12 +43,14 @@ class PopupManager {
         postCooldown: response.postCooldown !== undefined ? response.postCooldown : 5
       };
     } catch (error) {
-      console.error('Failed to load state from tab, trying background script:', error);
+      console.error('Failed to load state from background script:', error);
       
-      // Fallback: get state directly from background script
+      // Fallback: try to get state from content script
       try {
-        const response = await chrome.runtime.sendMessage({ action: 'getState' });
-        this.isActive = response.isActive || false;
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        const response = await chrome.tabs.sendMessage(tab.id, { action: 'getState' });
+        console.log('Received response from tab:', response);
+        this.isActive = response.isActiveInThisTab || false;
         this.config = {
           timestampFormat: response.timestampFormat || 'absolute',
           timeFormat: response.timeFormat || 'HH:mm:ss',
@@ -63,7 +62,7 @@ class PopupManager {
           postCooldown: response.postCooldown !== undefined ? response.postCooldown : 5
         };
       } catch (fallbackError) {
-        console.error('Failed to load state from background script:', fallbackError);
+        console.error('Failed to load state from tab:', fallbackError);
         // Use default values
         this.isActive = false;
         this.config = {

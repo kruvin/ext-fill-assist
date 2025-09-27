@@ -104,7 +104,7 @@ class InterviewFillAssistant {
   }
 
   setupTextListeners() {
-    // Listen for input events on text areas and contenteditable elements
+    // Simple approach: only listen to input events
     document.addEventListener('input', (event) => {
       if (!this.isActive) return;
       
@@ -113,8 +113,6 @@ class InterviewFillAssistant {
         this.handleTextInput(target, event);
       }
     });
-
-    // Note: No longer need to listen for Enter key since we detect beginning of line directly
 
     // Listen for focus changes to update timer position
     document.addEventListener('focusin', (event) => {
@@ -137,45 +135,55 @@ class InterviewFillAssistant {
            element.isContentEditable;
   }
 
+  isAtNewLine(element) {
+    const currentValue = this.getElementValue(element);
+    const cursorPosition = this.getCursorPosition(element);
+    
+    const textBeforeCursor = currentValue.substring(0, cursorPosition-1);
+    // return true if textBeforeCursor is empty or ends with a newline
+    if (textBeforeCursor.trim() === '' || textBeforeCursor.endsWith('\n')) {
+      return true;
+    }
+    return false;
+  }
+
   handleTextInput(element, event) {
     const inputValue = event.data;
     
-    // Check if this is at the beginning of a line
-    const isAtBeginningOfLine = this.isAtBeginningOfLine(element, inputValue);
+    // Only process if we have actual input data
+    if (!inputValue || inputValue.trim() === '') {
+      return;
+    }
+    
+    const currentValue = this.getElementValue(element);
+    
+   
+    // Simple check: is this at the beginning of a new line?
+    const isAtNewLine = this.isAtNewLine(element);
     
     console.log('Text input detected:', {
       inputValue,
-      isAtBeginningOfLine,
-      cursorPosition: this.getCursorPosition(element),
-      elementValue: this.getElementValue(element)
+      currentValue,
+      isFirstCharacter,
+      isAtNewLine,
+      shouldAddTimestamp: isAtNewLine
     });
     
-    if (isAtBeginningOfLine && inputValue && inputValue.trim() !== '') {
+    if (isAtNewLine) {
       // Check cooldown before adding timestamp
       const now = Date.now();
-      const timeSinceLastTimestamp = (now - this.lastTimestampTime) / 1000; // Convert to seconds
+      const timeSinceLastTimestamp = (now - this.lastTimestampTime) / 1000;
       
       if (timeSinceLastTimestamp >= this.config.postCooldown) {
         console.log('Adding timestamp...');
         this.addTimestamp(element);
-        this.lastTimestampTime = now; // Update last timestamp time
+        this.lastTimestampTime = now;
       } else {
-        // Still in cooldown
         console.log(`Timestamp cooldown active: ${Math.ceil(this.config.postCooldown - timeSinceLastTimestamp)}s remaining`);
       }
     }
   }
 
-  isAtBeginningOfLine(element, inputValue) {
-    const cursorPosition = this.getCursorPosition(element);
-    const currentValue = this.getElementValue(element);
-    
-    // check if element value is only the input value after removing whitespace
-    if (currentValue.trim() === inputValue) {
-      console.log('At beginning of line');
-      return true;
-    }
-  }
 
   addTimestamp(element) {
     try {
@@ -325,25 +333,19 @@ class InterviewFillAssistant {
   }
 
   getCursorPosition(element) {
+    console.log('getCursorPosition called for:', {
+      tagName: element.tagName,
+      contentEditable: element.contentEditable,
+      isContentEditable: element.isContentEditable,
+      element: element,
+      outerHTML: element.outerHTML ? element.outerHTML.substring(0, 100) : 'N/A'
+    });
+    
     if (element.tagName === 'TEXTAREA' || element.tagName === 'INPUT') {
+      console.log('Using TEXTAREA/INPUT branch, selectionStart:', element.selectionStart);
       return element.selectionStart || 0;
-    } else {
-      const selection = window.getSelection();
-      if (selection.rangeCount > 0) {
-        const range = selection.getRangeAt(0);
-        const startContainer = range.startContainer;
-        
-        // Handle different node types
-        if (startContainer.nodeType === Node.TEXT_NODE) {
-          return range.startOffset;
-        } else {
-          // For non-text nodes, try to find the text position
-          const textContent = element.textContent || '';
-          return Math.min(range.startOffset, textContent.length);
-        }
-      }
-      return 0;
-    }
+    } 
+    return 0;
   }
 
   setCursorPosition(element, position) {

@@ -48,7 +48,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         timerPosition: result.timerPosition || 'top-right',
         themeMode: result.themeMode || 'auto',
         postCooldown: result.postCooldown !== undefined ? result.postCooldown : 10,
-        isActiveInThisTab: result.isActive && activeTabId === sender.tab.id
+        isActiveInThisTab: result.isActiveInThisTab
       };
       
       sendResponse(response);
