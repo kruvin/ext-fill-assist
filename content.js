@@ -47,7 +47,9 @@ class InterviewFillAssistant {
           timerEnabled: this.config.timerEnabled,
           timerPosition: this.config.timerPosition,
           themeMode: this.config.themeMode,
-          postCooldown: this.config.postCooldown
+          postCooldown: this.config.postCooldown,
+          enableTextarea: this.config.enableTextarea,
+          enableInput: this.config.enableInput
         });
       } else if (request.action === 'setActive') {
         // Handle setActive requests from popup
@@ -100,6 +102,12 @@ class InterviewFillAssistant {
     }
     if (changes.postCooldown) {
       this.config.postCooldown = changes.postCooldown.newValue;
+    }
+    if (changes.enableTextarea) {
+      this.config.enableTextarea = changes.enableTextarea.newValue;
+    }
+    if (changes.enableInput) {
+      this.config.enableInput = changes.enableInput.newValue;
     }
   }
 
@@ -159,6 +167,14 @@ class InterviewFillAssistant {
     
     // Only process if we have actual input data
     if (!inputValue || inputValue.trim() === '') {
+      return;
+    }
+
+    // only process if element type matches textarea or input configuration
+    if (!this.config.enableTextarea && element.tagName === 'TEXTAREA') {
+      return;
+    }
+    if (!this.config.enableInput && element.tagName === 'INPUT' && element.type === 'text') {
       return;
     }
     

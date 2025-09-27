@@ -40,7 +40,9 @@ class PopupManager {
         timerEnabled: response.timerEnabled !== false,
         timerPosition: response.timerPosition || 'top-right',
         themeMode: response.themeMode || 'auto',
-        postCooldown: response.postCooldown !== undefined ? response.postCooldown : 5
+        postCooldown: response.postCooldown !== undefined ? response.postCooldown : 5,
+        enableTextarea: response.enableTextarea !== false,
+        enableInput: response.enableInput !== false
       };
     } catch (error) {
       console.error('Failed to load state from background script:', error);
@@ -122,6 +124,17 @@ class PopupManager {
     document.getElementById('themeMode').addEventListener('change', (e) => {
       this.updateConfig({ themeMode: e.target.value });
       this.applyTheme();
+    });
+
+    // Input type toggles
+    document.getElementById('enableTextarea').addEventListener('change', (e) => {
+      this.config.enableTextarea = e.target.checked;
+      this.updateConfig({ enableTextarea: this.config.enableTextarea });
+    });
+
+    document.getElementById('enableInput').addEventListener('change', (e) => {
+      this.config.enableInput = e.target.checked;
+      this.updateConfig({ enableInput: this.config.enableInput });
     });
 
     // Set to now button
@@ -257,6 +270,10 @@ class PopupManager {
     if (this.config.interviewStartTime) {
       document.getElementById('interviewStartTime').value = this.config.interviewStartTime;
     }
+
+    // Update input type toggles
+    document.getElementById('enableTextarea').checked = this.config.enableTextarea;
+    document.getElementById('enableInput').checked = this.config.enableInput;
 
     // Update visibility of time config sections
     this.toggleTimeConfigVisibility();
