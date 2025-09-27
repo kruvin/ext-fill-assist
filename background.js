@@ -2,17 +2,31 @@
 let activeTabId = null;
 
 chrome.runtime.onInstalled.addListener(() => {
-  // Set default configuration
-  chrome.storage.sync.set({
-    isActive: false,
-    timestampFormat: 'absolute',
-    timeFormat: 'HH:mm:ss',
-    interviewStartTime: null,
-    relativeFormat: 'mm:ss',
-    timerEnabled: true,
-    timerPosition: 'top-right',
-    themeMode: 'auto',
-    postCooldown: 10
+  // Set default configuration only if values don't exist
+  chrome.storage.sync.get(['isActive', 'timestampFormat', 'timeFormat', 'interviewStartTime', 'relativeFormat', 'timerEnabled', 'timerPosition', 'themeMode', 'postCooldown'], (result) => {
+    const defaults = {
+      isActive: false,
+      timestampFormat: 'absolute',
+      timeFormat: 'HH:mm:ss',
+      interviewStartTime: null,
+      relativeFormat: 'mm:ss',
+      timerEnabled: true,
+      timerPosition: 'top-right',
+      themeMode: 'auto',
+      postCooldown: 10
+    };
+    
+    // Only set values that don't exist
+    const valuesToSet = {};
+    Object.keys(defaults).forEach(key => {
+      if (result[key] === undefined) {
+        valuesToSet[key] = defaults[key];
+      }
+    });
+    
+    if (Object.keys(valuesToSet).length > 0) {
+      chrome.storage.sync.set(valuesToSet);
+    }
   });
 });
 
@@ -33,7 +47,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         timerEnabled: result.timerEnabled !== false,
         timerPosition: result.timerPosition || 'top-right',
         themeMode: result.themeMode || 'auto',
-        postCooldown: result.postCooldown || 10,
+        postCooldown: result.postCooldown !== undefined ? result.postCooldown : 10,
         isActiveInThisTab: result.isActive && activeTabId === sender.tab.id
       };
       

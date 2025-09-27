@@ -43,7 +43,7 @@ class PopupManager {
         timerEnabled: response.timerEnabled !== false,
         timerPosition: response.timerPosition || 'top-right',
         themeMode: response.themeMode || 'auto',
-        postCooldown: response.postCooldown || 5
+        postCooldown: response.postCooldown !== undefined ? response.postCooldown : 5
       };
     } catch (error) {
       console.error('Failed to load state from tab, trying background script:', error);
@@ -60,7 +60,7 @@ class PopupManager {
           timerEnabled: response.timerEnabled !== false,
           timerPosition: response.timerPosition || 'top-right',
           themeMode: response.themeMode || 'auto',
-          postCooldown: response.postCooldown || 5
+          postCooldown: response.postCooldown !== undefined ? response.postCooldown : 5
         };
       } catch (fallbackError) {
         console.error('Failed to load state from background script:', fallbackError);
