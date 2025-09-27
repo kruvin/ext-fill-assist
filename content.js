@@ -126,6 +126,13 @@ class InterviewFillAssistant {
         this.handleFocusChange();
       }
     });
+
+    // Listen for scroll events to updater timer position
+    document.addEventListener('scroll', () => {
+      if (this.isActive) {
+        this.handleFocusChange();
+      }
+    });
   }
 
   isTextInput(element) {
@@ -164,7 +171,6 @@ class InterviewFillAssistant {
     console.log('Text input detected:', {
       inputValue,
       currentValue,
-      isFirstCharacter,
       isAtNewLine,
       shouldAddTimestamp: isAtNewLine
     });
