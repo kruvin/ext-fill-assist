@@ -3,7 +3,7 @@ let activeTabId = null;
 
 chrome.runtime.onInstalled.addListener(() => {
   // Set default configuration only if values don't exist
-  chrome.storage.sync.get(['isActive', 'timestampFormat', 'timeFormat', 'interviewStartTime', 'relativeFormat', 'timerEnabled', 'timerPosition', 'themeMode', 'postCooldown', 'enableTextarea', 'enableInput'], (result) => {
+  chrome.storage.sync.get(['isActive', 'timestampFormat', 'timeFormat', 'interviewStartTime', 'relativeFormat', 'timerEnabled', 'timerPosition', 'themeMode', 'postCooldown', 'timestampPrefix', 'enableTextarea', 'enableInput'], (result) => {
     const defaults = {
       isActive: false,
       timestampFormat: 'absolute',
@@ -14,6 +14,7 @@ chrome.runtime.onInstalled.addListener(() => {
       timerPosition: 'top-right',
       themeMode: 'auto',
       postCooldown: 10,
+      timestampPrefix: '^.',
       enableTextarea: true,
       enableInput: true
     };
@@ -35,7 +36,7 @@ chrome.runtime.onInstalled.addListener(() => {
 // Handle messages from content script and popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'getState') {
-    chrome.storage.sync.get(['isActive', 'timestampFormat', 'timeFormat', 'interviewStartTime', 'relativeFormat', 'timerEnabled', 'timerPosition', 'themeMode', 'postCooldown', 'enableTextarea', 'enableInput'], (result) => {
+    chrome.storage.sync.get(['isActive', 'timestampFormat', 'timeFormat', 'interviewStartTime', 'relativeFormat', 'timerEnabled', 'timerPosition', 'themeMode', 'postCooldown', 'timestampPrefix', 'enableTextarea', 'enableInput'], (result) => {
       // Check if this tab is the active interview tab (handle cases where sender.tab might be undefined)
       result.isActiveInThisTab = result.isActive && activeTabId === (sender.tab ? sender.tab.id : null);
       
@@ -50,6 +51,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         timerPosition: result.timerPosition || 'top-right',
         themeMode: result.themeMode || 'auto',
         postCooldown: result.postCooldown !== undefined ? result.postCooldown : 10,
+        timestampPrefix: result.timestampPrefix || '^.',
         enableTextarea: result.enableTextarea !== false,
         enableInput: result.enableInput !== false,
         isActiveInThisTab: result.isActiveInThisTab

@@ -30,6 +30,7 @@ class InterviewFillAssistant {
       timerPosition: response.timerPosition || 'top-right',
       themeMode: response.themeMode || 'auto',
       postCooldown: response.postCooldown !== undefined ? response.postCooldown : 10,
+      timestampPrefix: response.timestampPrefix || '^.',
       enableTextarea: response.enableTextarea !== false,
       enableInput: response.enableInput !== false
     };
@@ -53,6 +54,7 @@ class InterviewFillAssistant {
           timerPosition: this.config.timerPosition,
           themeMode: this.config.themeMode,
           postCooldown: this.config.postCooldown,
+          timestampPrefix: this.config.timestampPrefix,
           enableTextarea: this.config.enableTextarea,
           enableInput: this.config.enableInput
         });
@@ -107,6 +109,9 @@ class InterviewFillAssistant {
     }
     if (changes.postCooldown) {
       this.config.postCooldown = changes.postCooldown.newValue;
+    }
+    if (changes.timestampPrefix) {
+      this.config.timestampPrefix = changes.timestampPrefix.newValue;
     }
     if (changes.enableTextarea) {
       this.config.enableTextarea = changes.enableTextarea.newValue;
@@ -167,6 +172,21 @@ class InterviewFillAssistant {
     return false;
   }
 
+  checkTimestampPrefix(element) {
+    const currentValue = this.getElementValue(element);
+    const cursorPosition = this.getCursorPosition(element);
+    
+    const textBeforeCursor = currentValue.substring(0, cursorPosition);
+    const currentLine = textBeforeCursor.split("\n").at(-1);
+    try {
+      const prefixRegex = RegExp(this.config.timestampPrefix);
+      return prefixRegex.test(currentLine);
+    } catch (e) {
+      // Fallback to substring check
+      return currentLine.startsWith(this.config.timestampPrefix);
+    }
+  }
+
   handleTextInput(element, event) {
     const inputValue = event.data;
     
@@ -188,15 +208,17 @@ class InterviewFillAssistant {
    
     // Simple check: is this at the beginning of a new line?
     const isAtNewLine = this.isAtNewLine(element);
-    
+    const doesPrefixMatch = this.checkTimestampPrefix(element);
+
     console.log('Text input detected:', {
       inputValue,
       currentValue,
       isAtNewLine,
-      shouldAddTimestamp: isAtNewLine
+      shouldAddTimestamp: isAtNewLine,
+      doesPrefixMatch: doesPrefixMatch,
     });
     
-    if (isAtNewLine) {
+    if (isAtNewLine && doesPrefixMatch) {
       // Check cooldown before adding timestamp
       const now = Date.now();
       const timeSinceLastTimestamp = (now - this.lastTimestampTime) / 1000;
