@@ -41,6 +41,7 @@ class PopupManager {
         timerPosition: response.timerPosition || 'top-right',
         themeMode: response.themeMode || 'auto',
         postCooldown: response.postCooldown !== undefined ? response.postCooldown : 5,
+        timestampPrefix: response.timestampPrefix || '^.',
         enableTextarea: response.enableTextarea !== false,
         enableInput: response.enableInput !== false
       };
@@ -61,7 +62,8 @@ class PopupManager {
           timerEnabled: response.timerEnabled !== false,
           timerPosition: response.timerPosition || 'top-right',
           themeMode: response.themeMode || 'auto',
-          postCooldown: response.postCooldown !== undefined ? response.postCooldown : 5
+          postCooldown: response.postCooldown !== undefined ? response.postCooldown : 5,
+          timestampPrefix: response.timestampPrefix || '^.'
         };
       } catch (fallbackError) {
         console.error('Failed to load state from tab:', fallbackError);
@@ -75,7 +77,8 @@ class PopupManager {
           timerEnabled: true,
           timerPosition: 'top-right',
           themeMode: 'auto',
-          postCooldown: 5
+          postCooldown: 5,
+          timestampPrefix: '^.'
         };
       }
     }
@@ -108,6 +111,10 @@ class PopupManager {
 
     document.getElementById('postCooldown').addEventListener('change', (e) => {
       this.updateConfig({ postCooldown: parseInt(e.target.value) || 0 });
+    });
+
+    document.getElementById('timestampPrefix').addEventListener('change', (e) => {
+      this.updateConfig({ timestampPrefix: e.target.value || '^.' });
     });
 
     // Timer configuration
@@ -266,6 +273,7 @@ class PopupManager {
     document.getElementById('timerPosition').value = this.config.timerPosition;
     document.getElementById('themeMode').value = this.config.themeMode;
     document.getElementById('postCooldown').value = this.config.postCooldown;
+    document.getElementById('timestampPrefix').value = this.config.timestampPrefix;
     
     if (this.config.interviewStartTime) {
       document.getElementById('interviewStartTime').value = this.config.interviewStartTime;

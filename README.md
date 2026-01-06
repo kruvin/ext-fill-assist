@@ -14,6 +14,7 @@ A Chrome extension that assists in documenting interviews and forms in real time
 - **Real-time Timer Display**: Visual timer showing elapsed interview time
 - **Input Type Configuration**: Toggle support for textarea elements and input boxes separately
 - **Post Cooldown**: Configurable delay between timestamps to prevent spam
+- **Timestamp Prefix**: Regex used to limit which lines are prepended with a timestmap
 - **Theme Support**: Automatic light/dark mode with manual override
 - **Tab-Specific Activation**: Only active in the tab where interview was started
 - **Real-time Processing**: Works on any webpage with text inputs, textareas, and contenteditable elements
@@ -61,6 +62,7 @@ A Chrome extension that assists in documenting interviews and forms in real time
 
 ### Advanced Settings
 - **Post Cooldown**: Minimum seconds between timestamps (0-300 seconds)
+- **Timestamp Prefix**: Only lines matching this regex are prepended with a timestamp (defaults to ^. - matching any character)
 - **Theme Mode**: Auto (follow system), Light, or Dark theme
 - **Interview Start Time**: Set custom start time or use current time
 
